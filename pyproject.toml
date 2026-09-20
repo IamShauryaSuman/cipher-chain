@@ -1,0 +1,32 @@
+[project]
+name = "cipher-chain"
+version = "1.0.0"
+description = "Cryptographic Test Harness — benchmarking hash function performance trade-offs"
+requires-python = ">=3.11"
+authors = [{ name = "Shaurya Suman", email = "shaurya@shauryasuman.com" }, { name = "Tushar Kumar" }]
+dependencies = [
+  "jupyter>=1.1.1",
+  "matplotlib>=3.11.2",
+  "memory-profiler>=0.61.0",
+  "polars>=2.0.0",
+  "pyarrow>=26.0.0",
+  "pytest>=9.1.1",
+]
+
+[project.scripts]
+run-avalanche = "benchmarks.run_avalanche:main"
+run-memory = "benchmarks.run_memory:main"
+run-throughput = "benchmarks.run_throughput:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "nbstripout>=0.9.1",
+]
