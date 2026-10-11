@@ -1,0 +1,5 @@
+Algorithm,Architecture,Peak Throughput (MB/s),Peak Memory Delta (MiB),Mean Avalanche (%)
+SHA-256,Merkle-Damgard,2363.55,0.1406,49.61
+SHA3-256,Sponge (Keccak),653.28,0.0,49.88
+Scrypt,Memory-Hard PBKDF,720.88,32.0039,49.8
+BLAKE2b,ARX,1309.68,0.125,50.04
