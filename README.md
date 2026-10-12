@@ -67,9 +67,10 @@ cipher-chain/
 ├── notebooks/
 │   └── hashing_analysis.ipynb  # Interactive Polars analytics & visualization pipeline
 ├── figures/                    # Publication-grade figures (300 DPI PNG)
-│   ├── throughput_vs_payload.png
-│   ├── memory_consumption.png
-│   └── avalanche_distribution.png
+│   ├── throughput_node_a.png   # Throughput profile for Node A (Intel Core Ultra 5 / WSL2)
+│   ├── throughput_node_b.png   # Throughput profile for Node B (Bare-metal Linux workstation)
+│   ├── memory_consumption.png  # Memory RSS and delta footprint
+│   └── avalanche_distribution.png # SAC bit-flip variance box plot
 ├── tests/
 │   ├── __init__.py
 │   └── test_crypto.py          # Pytest validation suite (28 test cases)
@@ -112,39 +113,41 @@ Verify algorithm determinism, known test vectors, bit-flip reversibility, Hammin
 uv run pytest -v
 ```
 
-### 5.3 Executing Benchmarks
+### 5.3 Executing Benchmarks Across Nodes
 
-Run the standalone CLI benchmarking scripts. Results will automatically write to structured CSV files in the `data/` directory:
+Run the standalone CLI benchmarking scripts. Use the `--node` flag to specify hardware profiles (defaults to `platform.node()`):
 
 ```bash
-# 1. Throughput & Latency Benchmark (1 KB -> 100 MB)
-uv run python -m benchmarks.run_throughput
+# Example: Executing on Node A (Intel Core Ultra 5 / WSL2)
+uv run python -m benchmarks.run_throughput --node "Node A"
+uv run python -m benchmarks.run_memory --node "Node A"
+uv run python -m benchmarks.run_avalanche --node "Node A"
 
-# 2. Memory Footprint & Hardness Profiling (including N=16384 & N=32768 Scrypt)
-uv run python -m benchmarks.run_memory
-
-# 3. Avalanche Effect SAC Testing (20 random-bit trials per configuration)
-uv run python -m benchmarks.run_avalanche
+# Example: Executing on Node B (Native Linux Workstation)
+uv run python -m benchmarks.run_throughput --node "Node B"
+uv run python -m benchmarks.run_memory --node "Node B"
+uv run python -m benchmarks.run_avalanche --node "Node B"
 ```
 
 ### 5.4 Launching the Analysis Notebook
 
-To ingest the benchmark results, compute Polars aggregations, and generate the $300\text{ DPI}$ figures:
+To ingest the multi-node benchmark results, compute Polars aggregations, and generate the $300\text{ DPI}$ figures:
 
 ```bash
 uv run jupyter lab
 ```
 
 Open `notebooks/hashing_analysis.ipynb` and execute all cells. The notebook automatically updates:
-- `data/hashing_summary.csv`
-- `figures/throughput_vs_payload.png`
+- `data/hashing_summary.csv` (with separate Node A and Node B peak throughput columns)
+- `figures/throughput_node_a.png`
+- `figures/throughput_node_b.png`
 - `figures/memory_consumption.png`
 - `figures/avalanche_distribution.png`
 
 Headless execution via CLI:
 
 ```bash
-uv run jupyter nbconvert --to notebook --execute notebooks/hashing_analysis.ipynb --output hashing_analysis.ipynb
+uv run jupyter nbconvert --to notebook --execute notebooks/hashing_analysis.ipynb --inplace
 ```
 
 ---

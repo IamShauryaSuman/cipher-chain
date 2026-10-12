@@ -15,8 +15,10 @@ Usage::
 
 from __future__ import annotations
 
+import argparse
 import csv
 import os
+import platform
 import time
 from pathlib import Path
 
@@ -51,6 +53,7 @@ SCRYPT_HARDNESS_CONFIGS: list[tuple[int, int, int]] = [
 
 CSV_HEADER: list[str] = [
     "timestamp",
+    "node",
     "algorithm",
     "payload_bytes",
     "baseline_memory_mib",
@@ -66,8 +69,9 @@ def _ensure_data_dir() -> Path:
     return data_dir
 
 
-def run() -> list[MemoryResult]:
+def run(node: str | None = None) -> list[MemoryResult]:
     """Execute the full memory-profiling suite."""
+    node_id = node or platform.node() or "unknown"
     results: list[MemoryResult] = []
     data_dir = _ensure_data_dir()
     csv_path = data_dir / "memory.csv"
@@ -79,7 +83,7 @@ def run() -> list[MemoryResult]:
         if write_header:
             writer.writerow(CSV_HEADER)
 
-        print("\n--- Part 1: Baseline Memory Profile Across Algorithms ---")
+        print(f"\n--- Part 1: Baseline Memory Profile Across Algorithms [{node_id}] ---")
         for algo_name in ALGORITHM_NAMES:
             func = ALGORITHMS[algo_name]
             for size in PAYLOAD_SIZES:
@@ -100,6 +104,7 @@ def run() -> list[MemoryResult]:
 
                 writer.writerow([
                     time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                    node_id,
                     result.algorithm,
                     result.payload_bytes,
                     f"{result.baseline_memory_mib:.4f}",
@@ -115,14 +120,14 @@ def run() -> list[MemoryResult]:
                     else ""
                 )
                 print(
-                    f"  {algo_name:<10s} | "
+                    f"  [{node_id}] {algo_name:<10s} | "
                     f"{size / 1024:>8.0f} KB | "
                     f"baseline {result.baseline_memory_mib:>8.2f} MiB | "
                     f"peak {result.peak_memory_mib:>8.2f} MiB | "
                     f"Δ {result.delta_memory_mib:>+8.4f} MiB{theo_str}"
                 )
 
-        print("\n--- Part 2: Scrypt Scaled Memory-Hardness Benchmark ---")
+        print(f"\n--- Part 2: Scrypt Scaled Memory-Hardness Benchmark [{node_id}] ---")
         scrypt_payload = os.urandom(1024)  # 1 KB payload isolates cost-parameter allocation
         for n, r, p in SCRYPT_HARDNESS_CONFIGS:
             theo_bytes = scrypt_theoretical_memory(n, r)
@@ -143,6 +148,7 @@ def run() -> list[MemoryResult]:
 
             writer.writerow([
                 time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                node_id,
                 result.algorithm,
                 result.payload_bytes,
                 f"{result.baseline_memory_mib:.4f}",
@@ -153,7 +159,7 @@ def run() -> list[MemoryResult]:
             fh.flush()
 
             print(
-                f"  scrypt (N={n}, r={r}) | "
+                f"  [{node_id}] scrypt (N={n}, r={r}) | "
                 f"theo {theo_mib:>5.1f} MiB | "
                 f"baseline {result.baseline_memory_mib:>8.2f} MiB | "
                 f"peak {result.peak_memory_mib:>8.2f} MiB | "
@@ -167,11 +173,25 @@ def run() -> list[MemoryResult]:
 
 def main() -> None:
     """CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="CipherChain — Memory Profiling Benchmark"
+    )
+    parser.add_argument(
+        "--node",
+        "--machine-id",
+        dest="node",
+        type=str,
+        default=platform.node() or "unknown",
+        help="Hardware node identifier (default: platform.node()).",
+    )
+    args = parser.parse_args()
+
     print("=" * 70)
-    print("CipherChain — Memory Profiling Benchmark")
+    print(f"CipherChain — Memory Profiling Benchmark [Node: {args.node}]")
     print("=" * 70)
-    run()
+    run(node=args.node)
 
 
 if __name__ == "__main__":
     main()
+

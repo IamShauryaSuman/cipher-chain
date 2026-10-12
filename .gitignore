@@ -9,6 +9,8 @@ __pycache__/
 # uv lock (optionally track this)
 # uv.lock
 
+build/
+
 # Pytest cache
 .pytest_cache/
 
@@ -21,3 +23,11 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+reports/build/
+

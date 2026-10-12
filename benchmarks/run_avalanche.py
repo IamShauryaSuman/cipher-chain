@@ -15,8 +15,10 @@ Usage::
 
 from __future__ import annotations
 
+import argparse
 import csv
 import os
+import platform
 import time
 from pathlib import Path
 
@@ -40,6 +42,7 @@ SCRYPT_MAX_PAYLOAD: int = 1 * 1024 * 1024
 
 CSV_HEADER: list[str] = [
     "timestamp",
+    "node",
     "algorithm",
     "payload_bytes",
     "trial",
@@ -56,8 +59,9 @@ def _ensure_data_dir() -> Path:
     return data_dir
 
 
-def run() -> list[AvalancheResult]:
+def run(node: str | None = None) -> list[AvalancheResult]:
     """Execute the full avalanche-effect test suite."""
+    node_id = node or platform.node() or "unknown"
     results: list[AvalancheResult] = []
     data_dir = _ensure_data_dir()
     csv_path = data_dir / "avalanche.csv"
@@ -85,6 +89,7 @@ def run() -> list[AvalancheResult]:
 
                     writer.writerow([
                         time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                        node_id,
                         result.algorithm,
                         result.payload_bytes,
                         trial + 1,
@@ -98,7 +103,7 @@ def run() -> list[AvalancheResult]:
                 mean_ratio = sum(ratios) / len(ratios)
 
                 print(
-                    f"  {algo_name:<10s} | "
+                    f"  [{node_id}] {algo_name:<10s} | "
                     f"{size:>10,d} B | "
                     f"mean avalanche = {mean_ratio:.4f} "
                     f"({'PASS ✓' if 0.35 <= mean_ratio <= 0.65 else 'WARN ⚠'})"
@@ -110,12 +115,26 @@ def run() -> list[AvalancheResult]:
 
 def main() -> None:
     """CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="CipherChain — Avalanche Effect Benchmark"
+    )
+    parser.add_argument(
+        "--node",
+        "--machine-id",
+        dest="node",
+        type=str,
+        default=platform.node() or "unknown",
+        help="Hardware node identifier (default: platform.node()).",
+    )
+    args = parser.parse_args()
+
     print("=" * 66)
-    print("CipherChain — Avalanche Effect Benchmark")
+    print(f"CipherChain — Avalanche Effect Benchmark [Node: {args.node}]")
     print("=" * 66)
-    run()
+    run(node=args.node)
 
 
 if __name__ == "__main__":
     main()
+
 

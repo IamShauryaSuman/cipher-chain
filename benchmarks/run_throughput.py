@@ -12,8 +12,10 @@ Usage::
 
 from __future__ import annotations
 
+import argparse
 import csv
 import os
+import platform
 import sys
 import time
 from pathlib import Path
@@ -44,6 +46,7 @@ MIN_BENCH_TIME_SECS: float = 0.5
 
 CSV_HEADER: list[str] = [
     "timestamp",
+    "node",
     "algorithm",
     "payload_bytes",
     "elapsed_seconds",
@@ -65,8 +68,9 @@ def _ensure_data_dir() -> Path:
     return data_dir
 
 
-def run() -> list[TimingResult]:
+def run(node: str | None = None) -> list[TimingResult]:
     """Execute the full throughput benchmark suite."""
+    node_id = node or platform.node() or "unknown"
     results: list[TimingResult] = []
     data_dir = _ensure_data_dir()
     csv_path = data_dir / "throughput.csv"
@@ -98,6 +102,7 @@ def run() -> list[TimingResult]:
 
                 writer.writerow([
                     time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                    node_id,
                     result.algorithm,
                     result.payload_bytes,
                     f"{result.elapsed_seconds:.9f}",
@@ -106,7 +111,7 @@ def run() -> list[TimingResult]:
                 fh.flush()
 
                 print(
-                    f"  {algo_name:<10s} | "
+                    f"  [{node_id}] {algo_name:<10s} | "
                     f"{size / 1024:>10.0f} KB | "
                     f"{result.elapsed_seconds * 1000:>10.3f} ms | "
                     f"{result.throughput_mb_per_sec:>10.2f} MB/s"
@@ -118,12 +123,26 @@ def run() -> list[TimingResult]:
 
 def main() -> None:
     """CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="CipherChain — Throughput & Latency Benchmark"
+    )
+    parser.add_argument(
+        "--node",
+        "--machine-id",
+        dest="node",
+        type=str,
+        default=platform.node() or "unknown",
+        help="Hardware node identifier (default: platform.node()).",
+    )
+    args = parser.parse_args()
+
     print("=" * 66)
-    print("CipherChain — Throughput & Latency Benchmark")
+    print(f"CipherChain — Throughput & Latency Benchmark [Node: {args.node}]")
     print("=" * 66)
-    run()
+    run(node=args.node)
 
 
 if __name__ == "__main__":
     main()
+
 
